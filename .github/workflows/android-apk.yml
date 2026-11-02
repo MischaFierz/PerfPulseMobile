@@ -1,0 +1,70 @@
+# Baut die Android-App als APK zum direkten Installieren (ohne Play Store).
+# Actions → „Android-APK bauen“ → Run workflow; danach unter dem Lauf „Artifacts“ → PerfPulse-apk herunterladen.
+name: Android-APK bauen
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+
+      # android/ entsteht aus app.json (Continuous Native Generation) und ist nicht im Repository.
+      - run: npx expo prebuild --platform android --no-install
+
+      # Mit eigenem Schlüssel signieren, wenn die Secrets gesetzt sind (sonst mit dem Debug-Schlüssel der Vorlage).
+      - name: Signing-Schlüssel
+        if: ${{ env.KEYSTORE != '' }}
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE" | base64 -d > android/app/release.keystore
+          cat >> android/gradle.properties <<PROPS
+          PP_STORE_FILE=release.keystore
+          PP_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          PP_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
+          PP_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+          PROPS
+          python3 - <<'PY'
+          import re
+          p = 'android/app/build.gradle'
+          s = open(p).read()
+          s = s.replace("signingConfigs {", """signingConfigs {
+                  release {
+                      storeFile file(PP_STORE_FILE)
+                      storePassword PP_STORE_PASSWORD
+                      keyAlias PP_KEY_ALIAS
+                      keyPassword PP_KEY_PASSWORD
+                  }""", 1)
+          s = re.sub(r"(release \{[^{}]*?)signingConfig signingConfigs\.debug", r"\1signingConfig signingConfigs.release", s, count=1, flags=re.S)
+          open(p, 'w').write(s)
+          PY
+
+      - name: APK bauen
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PerfPulse-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
