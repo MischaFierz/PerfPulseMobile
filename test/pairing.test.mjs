@@ -34,3 +34,12 @@ test('liest den QR-Code von PerfPulse', () => {
   assert.equal(parsePairing('hallo'), null);
   assert.ok(isLanPairing('http://192.168.1.20:8765/#k=abc'));
 });
+
+test('fragt, sobald die nächsten Werte da sind', async () => {
+  const { nextPoll } = await import('../src/polling.ts');
+  assert.equal(nextPoll(500, 2000), 1850);      // 1,5 s bis zu den nächsten + Weg durchs Internet
+  assert.equal(nextPoll(2500, 2000), 300);      // schon überfällig: gleich nochmals
+  assert.equal(nextPoll(0, 1000), 1350);
+  assert.equal(nextPoll(1000, 300000), 2500);   // PC schaut noch nicht zu
+  assert.equal(nextPoll(undefined, undefined), 2500);
+});

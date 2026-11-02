@@ -8,7 +8,7 @@ import { ago, bytes, rate, uptime } from '../format';
 import { colors, levelColor } from '../theme';
 import type { Crashes, Pc } from '../types';
 
-const LIVE_MS = 2500;
+const RETRY_MS = 2500;
 
 /** Die Werte eines PCs, live, solange die App offen ist. */
 export function DashboardScreen({ pc, onName, onGone }: { pc: Pc; onName: (name: string) => void; onGone: () => void }) {
@@ -24,8 +24,10 @@ export function DashboardScreen({ pc, onName, onGone }: { pc: Pc; onName: (name:
 
   const tick = useCallback(async () => {
     if (timer.current) clearTimeout(timer.current);
+    let wait = RETRY_MS;
     try {
       const r = await fetchReading(pc);
+      wait = r.nextPollMs;
       setReading(r);
       if (r.payload.crashes) setCrashes(r.payload.crashes);
       setError(null);
@@ -36,7 +38,7 @@ export function DashboardScreen({ pc, onName, onGone }: { pc: Pc; onName: (name:
       else setError(e instanceof Error && e.message.startsWith('Die Website') ? e.message : 'Keine Verbindung zur PerfPulse-Website.');
     }
     // Im Hintergrund nicht fragen – spart Akku und Daten.
-    if (active.current) timer.current = setTimeout(tick, LIVE_MS);
+    if (active.current) timer.current = setTimeout(tick, wait);
   }, [pc, onName]);
 
   useEffect(() => {
