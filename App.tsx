@@ -1,12 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { ScanScreen } from './src/screens/ScanScreen';
 import { loadCurrent, loadPcs, saveCurrent, savePcs } from './src/storage';
 import { colors } from './src/theme';
 import type { Pc } from './src/types';
+import { checkForUpdate, installedVersion, type AppUpdate } from './src/update';
 
 /**
  * PerfPulse fürs Handy: zeigt die Werte deiner PCs live – von überall. Einmal den QR-Code aus PerfPulse scannen
@@ -17,6 +18,8 @@ export default function App() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [picker, setPicker] = useState(false);
+  const [update, setUpdate] = useState<AppUpdate | null>(null);
+  const [updateDismissed, setUpdateDismissed] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -27,7 +30,7 @@ export default function App() {
     })();
   }, []);
 
-  const update = useCallback(async (list: Pc[], cur: string | null) => {
+  const store = useCallback(async (list: Pc[], cur: string | null) => {
     setPcs(list);
     setCurrentId(cur);
     await savePcs(list);
@@ -35,11 +38,21 @@ export default function App() {
   }, []);
 
   const current = pcs?.find(p => p.id === currentId) ?? null;
+  const server = current?.server ?? pcs?.[0]?.server;
+
+  // Neue Version der App? Beim Start und wenn die App wieder in den Vordergrund kommt - die Website kennt jeder gespeicherte PC.
+  useEffect(() => {
+    if (!server) return;
+    const check = () => checkForUpdate(server).then(setUpdate);
+    check();
+    const sub = AppState.addEventListener('change', s => { if (s === 'active') check(); });
+    return () => sub.remove();
+  }, [server]);
 
   const onPaired = (pc: Pc) => {
     const list = (pcs ?? []).filter(p => p.id !== pc.id).concat(pc);
     setScanning(false);
-    update(list, pc.id);
+    store(list, pc.id);
   };
 
   const onName = useCallback((name: string) => {
@@ -57,7 +70,7 @@ export default function App() {
       {
         text: 'Entfernen', style: 'destructive', onPress: () => {
           const list = (pcs ?? []).filter(p => p.id !== pc.id);
-          update(list, list[0]?.id ?? null);
+          store(list, list[0]?.id ?? null);
           setPicker(false);
         },
       },
@@ -78,6 +91,19 @@ export default function App() {
           )}
         </View>
 
+        {update && !updateDismissed && (
+          <View style={styles.update}>
+            <Text style={styles.updateTitle}>Neue Version {update.version}</Text>
+            {!!update.note && <Text style={styles.updateNote} numberOfLines={4}>{update.note}</Text>}
+            <View style={styles.updateActions}>
+              <Pressable style={styles.updateButton} onPress={() => Linking.openURL(update.url)}>
+                <Text style={styles.addText}>Herunterladen & installieren</Text>
+              </Pressable>
+              <Pressable onPress={() => setUpdateDismissed(true)} hitSlop={10}><Text style={styles.sheetSub}>Später</Text></Pressable>
+            </View>
+          </View>
+        )}
+
         {pcs === null ? (
           <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
         ) : !current || scanning ? (
@@ -92,7 +118,7 @@ export default function App() {
               <Text style={styles.sheetTitle}>Deine PCs</Text>
               {pcs?.map(pc => (
                 <View key={pc.id} style={styles.sheetRow}>
-                  <Pressable style={{ flex: 1 }} onPress={() => { update(pcs, pc.id); setPicker(false); }}>
+                  <Pressable style={{ flex: 1 }} onPress={() => { store(pcs, pc.id); setPicker(false); }}>
                     <Text style={[styles.sheetText, pc.id === currentId && { color: colors.accent }]}>{pc.name}</Text>
                     <Text style={styles.sheetSub}>{pc.server.replace(/^https?:\/\//, '')}</Text>
                   </Pressable>
@@ -102,6 +128,7 @@ export default function App() {
               <Pressable style={styles.addButton} onPress={() => { setPicker(false); setScanning(true); }}>
                 <Text style={styles.addText}>+ Weiteren PC verbinden</Text>
               </Pressable>
+              <Text style={[styles.sheetSub, { textAlign: 'center', marginTop: 14 }]}>PerfPulse {installedVersion()}</Text>
             </Pressable>
           </Pressable>
         </Modal>
@@ -128,4 +155,9 @@ const styles = StyleSheet.create({
   remove: { color: colors.crit, fontSize: 13 },
   addButton: { marginTop: 14, backgroundColor: '#1E2333', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   addText: { color: colors.text, fontWeight: '600' },
+  update: { marginHorizontal: 14, marginTop: 8, padding: 12, borderRadius: 14, backgroundColor: '#22D3EE1A', borderColor: '#22D3EE55', borderWidth: 1 },
+  updateTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
+  updateNote: { color: colors.sub, fontSize: 13, marginTop: 4 },
+  updateActions: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 10 },
+  updateButton: { backgroundColor: '#1E2333', borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14 },
 });

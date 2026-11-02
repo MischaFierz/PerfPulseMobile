@@ -1,0 +1,71 @@
+# Baut die Android-App aus einem Commit und veröffentlicht sie auf der PerfPulse-Website.
+# Gestartet vom Admin-Bereich der Website (Handy-App → Veröffentlichen) mit commit, version, version_code, note.
+# Der Name des Laufs sagt dem Admin-Bereich, was gebaut wird: "<version> (android) aus <sha>".
+#
+# Braucht im Repository: das Secret SERVER_BUILD_KEY (= PP_BUILD_KEY der Website) und die Variable SERVER_URL.
+# Optional die Secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+name: App veröffentlichen
+run-name: "${{ inputs.version }} (android) aus ${{ inputs.commit }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit: { description: Ganzer Git-SHA auf main, required: true }
+      version: { description: 'Nummer, etwa 1.2.0', required: true }
+      version_code: { description: versionCode für Android (muss steigen), required: true }
+      note: { description: Update-Info, required: false, default: '' }
+
+concurrency:
+  group: app-veroeffentlichen
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+
+      - name: APK bauen
+        run: tools/android-build.sh
+        env:
+          VERSION: ${{ inputs.version }}
+          VERSION_CODE: ${{ inputs.version_code }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Auf die Website hochladen
+        run: tools/upload.sh
+        env:
+          SERVER_URL: ${{ vars.SERVER_URL }}
+          SERVER_BUILD_KEY: ${{ secrets.SERVER_BUILD_KEY }}
+          VERSION: ${{ inputs.version }}
+          VERSION_CODE: ${{ inputs.version_code }}
+          NOTE: ${{ inputs.note }}
+          COMMIT: ${{ inputs.commit }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PerfPulse-${{ inputs.version }}-apk
+          path: build/PerfPulse.apk
+          if-no-files-found: ignore
+          retention-days: 14

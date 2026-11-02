@@ -17,22 +17,39 @@ ist – im Hintergrund nie, das spart Akku und Daten.
 
 ## Installieren
 
-**Android:** Unter Actions → „Android-APK bauen“ den neuesten Lauf öffnen, unter *Artifacts*
-`PerfPulse-apk` herunterladen, entpacken und die APK auf dem Handy öffnen (einmal „Installation
-aus unbekannten Quellen“ erlauben). Neue Versionen lassen sich darüber installieren.
+**Android:** Auf dem Handy `https://<PerfPulse-Website>/app/PerfPulse.apk` öffnen (oder auf
+`/handy` den Link „PerfPulse als Android-App“ antippen), herunterladen und installieren – einmal
+„Unbekannte Apps installieren“ erlauben. Danach meldet die App neue Versionen selbst:
+„Neue Version … – Herunterladen & installieren“.
 
-Eigener Signier-Schlüssel (empfohlen, sonst der Debug-Schlüssel der Vorlage): Secrets
-`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
-Einmal erzeugen:
+**iPhone:** Apple erlaubt Apps nur über den App Store / TestFlight (Apple-Entwicklerkonto).
+Ohne das: `https://<PerfPulse-Website>/handy` in Safari öffnen → *Teilen* → *Zum Home-Bildschirm* –
+sie öffnet sich dann wie eine App, ohne Browser.
+
+## Veröffentlichen
+
+Im Admin-Bereich der Website unter **Handy-App** einen Commit auf `main` wählen →
+**Veröffentlichen** (Version, versionCode, Update-Info). Das startet hier den Workflow
+„App veröffentlichen“ (`.github/workflows/app-veroeffentlichen.yml`): Er setzt Version und
+versionCode in `app.json`, baut die APK (`tools/android-build.sh`) und lädt sie auf die Website
+(`tools/upload.sh`). Ab dann bekommt sie jeder, und die installierten Apps bieten das Update an.
+
+Einmal einrichten (Settings → Secrets and variables → Actions), wie bei PerfPulseApp:
+- Secret `SERVER_BUILD_KEY` (= `PP_BUILD_KEY` der Website) und Variable `SERVER_URL` (die Adresse der Website).
+- Das GitHub-Token der Website (`PP_GITHUB_TOKEN`) braucht auch auf diesem Repository
+  „Contents: Read“ und „Actions: Read and write“.
+- **Eigener Signier-Schlüssel – unbedingt vor der ersten Veröffentlichung.** Android installiert ein
+  Update nur, wenn es mit demselben Schlüssel signiert ist; ohne Secrets nimmt der Bau den
+  öffentlich bekannten Debug-Schlüssel der Vorlage. Secrets `ANDROID_KEYSTORE_BASE64`,
+  `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Einmal erzeugen und gut aufheben:
 
 ```sh
 keytool -genkeypair -v -keystore perfpulse.jks -alias perfpulse -keyalg RSA -keysize 2048 -validity 10000
 base64 -w0 perfpulse.jks   # → ANDROID_KEYSTORE_BASE64
 ```
 
-**iPhone:** Apple erlaubt Apps nur über den App Store / TestFlight (Apple-Entwicklerkonto).
-Ohne das: die Seite `https://<PerfPulse-Website>/handy` in Safari öffnen → *Teilen* →
-*Zum Home-Bildschirm* – sie öffnet sich dann wie eine App, ohne Browser.
+Jeder Push auf `main` baut die App zur Probe („Android-APK bauen“, APK unter *Artifacts*) –
+veröffentlicht wird nur über den Admin-Bereich.
 
 ## Entwickeln
 
@@ -54,5 +71,7 @@ src/api.ts               GET {Website}/api/phone/{id} mit X-PP-Read-Token
 src/crypto.ts            AES-256-GCM (noble), Base64, UTF-8
 src/pairing.ts           Den QR-Code lesen: https://…/handy#i=…&r=…&e=…
 src/storage.ts           expo-secure-store
-.github/workflows/       Android-APK bauen
+src/update.ts            Neue Version auf der Website? (/api/mobile-app)
+tools/                   android-build.sh (APK bauen), upload.sh (auf die Website laden)
+.github/workflows/       app-veroeffentlichen.yml (vom Admin-Bereich), android-apk.yml (Probebau)
 ```
