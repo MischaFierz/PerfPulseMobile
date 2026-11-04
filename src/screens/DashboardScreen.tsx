@@ -98,6 +98,15 @@ export function DashboardScreen({ pc, onName, onGone }: { pc: Pc; onName: (name:
 
       {s.ready ? (
         <>
+          {s.fps != null && (
+            <View style={styles.fps}>
+              <Text style={styles.fpsValue}>{Math.round(s.fps)}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.fpsLabel}>FPS</Text>
+                {!!s.fpsApp && <Text style={styles.sub} numberOfLines={1}>{s.fpsApp}</Text>}
+              </View>
+            </View>
+          )}
           <View style={styles.grid}>
             <Gauge label="CPU" value={s.cpu} sub={s.cpuMhz ? `${(s.cpuMhz / 1000).toFixed(2)} GHz` : ''} color={colors.accent} />
             <Gauge label="RAM" value={s.ramPct} sub={`${bytes(s.ramUsed)} / ${bytes(s.ramTotal)}`} color={colors.accent2} />
@@ -236,6 +245,12 @@ const styles = StyleSheet.create({
   stale: { backgroundColor: '#F59E0B1A', borderColor: '#F59E0B40', borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 12 },
   staleText: { color: '#FCD34D', fontSize: 13 },
   grid: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  fps: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, marginBottom: 10,
+    backgroundColor: colors.card, borderColor: '#F59E0B55', borderWidth: 1, borderRadius: 16,
+  },
+  fpsValue: { color: colors.warn, fontSize: 40, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  fpsLabel: { color: colors.text, fontSize: 15, fontWeight: '700' },
   legend: { flexDirection: 'row', gap: 14, marginTop: 6 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendLine: { width: 10, height: 3, borderRadius: 2 },

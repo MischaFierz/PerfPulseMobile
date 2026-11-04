@@ -27,6 +27,9 @@ export interface Stats {
   ramTotal: number;
   ramPct: number;
   gpu: number | null;
+  /** Bilder pro Sekunde des Spiels im Vordergrund – fehlt bei älteren PerfPulse-Fassungen. */
+  fps?: number | null;
+  fpsApp?: string | null;
   diskActive: number | null;
   diskRead: number | null;
   diskWrite: number | null;
