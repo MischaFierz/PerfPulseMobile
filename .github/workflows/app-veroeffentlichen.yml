@@ -28,13 +28,6 @@ jobs:
         with:
           ref: ${{ inputs.commit }}
 
-      # Bauen und Hochladen immer mit den Werkzeugen von main – so gehen Korrekturen daran auch für ältere Commits.
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          path: _main
-          sparse-checkout: tools
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -48,6 +41,16 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm test
+
+      # Bauen und Hochladen immer mit den Werkzeugen von main – so gehen Korrekturen daran auch für ältere Commits.
+      # Nur der Ordner tools/ (ohne Cone-Modus kämen die Dateien im Hauptordner mit, etwa App.tsx).
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _main
+          sparse-checkout: |
+            /tools/
+          sparse-checkout-cone-mode: false
 
       - name: APK bauen
         run: _main/tools/android-build.sh
