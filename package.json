@@ -21,6 +21,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
+    "pc": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/am-pc-testen.ps1",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs"

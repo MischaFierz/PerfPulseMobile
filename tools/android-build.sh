@@ -37,8 +37,8 @@ PY
 fi
 
 # Für Handys mit 32 Bit (armeabi-v7a) und 64 Bit (arm64-v8a) – eine APK für alle echten Handys.
-# Nur x86 (Emulatoren am PC) fehlt, das macht die APK kleiner.
-(cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a)
+# Dazu x86_64, damit sie auch im Emulator am PC läuft.
+(cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64)
 
 mkdir -p build
 cp android/app/build/outputs/apk/release/app-release.apk build/PerfPulse.apk
