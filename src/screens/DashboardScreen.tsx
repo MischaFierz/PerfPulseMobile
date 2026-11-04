@@ -129,8 +129,8 @@ export function DashboardScreen({ pc, onName, onGone }: { pc: Pc; onName: (name:
 
           {s.temps.length > 0 && (
             <Card title="Temperaturen">
-              {s.temps.map(t => (
-                <View key={t.label} style={styles.row}>
+              {s.temps.map((t, i) => (
+                <View key={`${t.label}-${i}`} style={styles.row}>
                   <Text style={styles.rowName} numberOfLines={1}>{t.label}{t.throttling ? <Text style={{ color: colors.crit }}> · drosselt</Text> : null}</Text>
                   <Text style={[styles.rowNum, { color: levelColor[t.level] ?? colors.text }]}>{t.est ? '≈ ' : ''}{t.c} °C</Text>
                 </View>
@@ -204,8 +204,8 @@ function CrashList({ c }: { c: Crashes | null }) {
   if (!c?.ready) return <Text style={[styles.sub, { marginTop: 12 }]}>Noch nicht geladen – gleich nochmal versuchen.</Text>;
   return (
     <View style={{ marginTop: 12 }}>
-      {c.hints?.map(h => (
-        <View key={h.title} style={[styles.hint, { borderColor: h.severity === 'critical' ? colors.crit : h.severity === 'ok' ? colors.good : colors.warn }]}>
+      {c.hints?.map((h, i) => (
+        <View key={`${h.title}-${i}`} style={[styles.hint, { borderColor: h.severity === 'critical' ? colors.crit : h.severity === 'ok' ? colors.good : colors.warn }]}>
           <Text style={{ color: colors.text, fontWeight: '700' }}>{h.title}</Text>
           <Text style={{ color: colors.text, fontSize: 13 }}>{h.text}</Text>
         </View>
