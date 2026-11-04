@@ -18,24 +18,20 @@ npx expo prebuild --platform android --no-install --clean
 
 if [[ -n "${ANDROID_KEYSTORE_BASE64:-}" ]]; then
   echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
-  {
-    echo "PP_STORE_FILE=release.keystore"
-    echo "PP_STORE_PASSWORD=${ANDROID_KEYSTORE_PASSWORD}"
-    echo "PP_KEY_ALIAS=${ANDROID_KEY_ALIAS}"
-    echo "PP_KEY_PASSWORD=${ANDROID_KEY_PASSWORD}"
-  } >> android/gradle.properties
+  # Die Passwörter liest Gradle aus den Umgebungsvariablen dieses Schritts – sie landen in keiner Datei.
   python3 - <<'PY'
 import re
 p = 'android/app/build.gradle'
 s = open(p).read()
 s = s.replace("signingConfigs {", """signingConfigs {
         release {
-            storeFile file(PP_STORE_FILE)
-            storePassword PP_STORE_PASSWORD
-            keyAlias PP_KEY_ALIAS
-            keyPassword PP_KEY_PASSWORD
+            storeFile file('release.keystore')
+            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            keyAlias System.getenv('ANDROID_KEY_ALIAS')
+            keyPassword System.getenv('ANDROID_KEY_PASSWORD')
         }""", 1)
-s = re.sub(r"(buildTypes \{.*?release \{[^{}]*?)signingConfig signingConfigs\.debug", r"\1signingConfig signingConfigs.release", s, count=1, flags=re.S)
+s, n = re.subn(r"(buildTypes \{.*?release \{[^{}]*?)signingConfig signingConfigs\.debug", r"\1signingConfig signingConfigs.release", s, count=1, flags=re.S)
+if n != 1: raise SystemExit("build.gradle: signingConfig des Release-Baus nicht gefunden")
 open(p, 'w').write(s)
 PY
 fi

@@ -28,6 +28,13 @@ jobs:
         with:
           ref: ${{ inputs.commit }}
 
+      # Bauen und Hochladen immer mit den Werkzeugen von main – so gehen Korrekturen daran auch für ältere Commits.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _main
+          sparse-checkout: tools
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -43,7 +50,7 @@ jobs:
       - run: npm test
 
       - name: APK bauen
-        run: tools/android-build.sh
+        run: _main/tools/android-build.sh
         env:
           VERSION: ${{ inputs.version }}
           VERSION_CODE: ${{ inputs.version_code }}
@@ -53,7 +60,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Auf die Website hochladen
-        run: tools/upload.sh
+        run: _main/tools/upload.sh
         env:
           SERVER_URL: ${{ vars.SERVER_URL }}
           SERVER_BUILD_KEY: ${{ secrets.SERVER_BUILD_KEY }}
