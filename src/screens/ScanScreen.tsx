@@ -1,11 +1,11 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { isLanPairing, parsePairing } from '../pairing';
+import { parsePairing } from '../pairing';
 import { colors } from '../theme';
 import type { Pc } from '../types';
 
-/** QR-Code aus PerfPulse scannen (Seite „Handy“ → „Überall“) – oder den kopierten Link einfügen. */
+/** QR-Code aus PerfPulse scannen (Seite „Handy“) – oder den kopierten Link einfügen. */
 export function ScanScreen({ onPaired, onCancel }: { onPaired: (pc: Pc) => void; onCancel?: () => void }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [error, setError] = useState<string | null>(null);
@@ -16,16 +16,14 @@ export function ScanScreen({ onPaired, onCancel }: { onPaired: (pc: Pc) => void;
     if (done.current) return;
     const pc = parsePairing(text);
     if (pc) { done.current = true; onPaired(pc); return; }
-    setError(isLanPairing(text)
-      ? 'Das ist der QR-Code für das Heimnetz. Wähle in PerfPulse beim QR-Code „Überall“.'
-      : 'Das ist kein QR-Code von PerfPulse.');
+    setError('Das ist kein QR-Code von PerfPulse. Er steht in PerfPulse am PC auf der Seite „Handy“.');
   };
 
   return (
     <View style={styles.root}>
       <Text style={styles.h1}>PC verbinden</Text>
       <Text style={styles.p}>
-        Öffne PerfPulse am PC, gehe auf <Text style={styles.b}>Handy</Text>, schalte <Text style={styles.b}>Von überall</Text> ein
+        Öffne PerfPulse am PC, gehe auf <Text style={styles.b}>Handy</Text>, schalte die <Text style={styles.b}>Handy-Verbindung</Text> ein
         und scanne den QR-Code. Danach bleibt das Handy verbunden – überall, auch im Mobilnetz.
       </Text>
 

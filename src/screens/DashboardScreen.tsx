@@ -57,7 +57,7 @@ export function DashboardScreen({ pc, onName, onGone }: { pc: Pc; onName: (name:
       <View style={styles.center}>
         <Text style={{ fontSize: 42 }}>🔒</Text>
         <Text style={styles.h2}>Verbindung beendet</Text>
-        <Text style={styles.centerText}>„{pc.name}“ hat „Von überall“ ausgeschaltet oder einen neuen Schlüssel erzeugt. Scanne den QR-Code in PerfPulse neu.</Text>
+        <Text style={styles.centerText}>„{pc.name}“ hat die Handy-Verbindung ausgeschaltet oder einen neuen Schlüssel erzeugt. Scanne den QR-Code in PerfPulse neu.</Text>
         <Pressable style={styles.button} onPress={onGone}><Text style={styles.buttonText}>Neu scannen</Text></Pressable>
       </View>
     );

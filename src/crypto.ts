@@ -1,9 +1,11 @@
 import { gcm } from '@noble/ciphers/aes.js';
+import { unzlibSync } from 'fflate';
 
 /**
  * Die Werte kommen vom PC verschlüsselt über die PerfPulse-Website: Base64 von Nonce (12 Bytes) ‖ Geheimtext ‖ Tag (16 Bytes),
  * AES-256-GCM, die Verbindungs-ID als Zusatzdaten. Der Schlüssel steht nur im QR-Code – der Server kann nichts lesen.
- * Reines JavaScript (noble), damit es ohne WebCrypto auf jedem Handy läuft.
+ * Vor dem Verschlüsseln packt der PC die Werte (zlib, beginnt mit 0x78) – ältere Fassungen schicken JSON ({ = 0x7B).
+ * Reines JavaScript (noble, fflate), damit es ohne WebCrypto auf jedem Handy läuft.
  */
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const LOOKUP = new Uint8Array(128).fill(255);
@@ -53,6 +55,7 @@ export function utf8Decode(b: Uint8Array): string {
 export function decrypt<T>(data: string, id: string, key: string): T {
   const raw = fromBase64(data);
   if (raw.length < 28) throw new Error('Zu kurz');
-  const plain = gcm(fromBase64(key), raw.subarray(0, 12), utf8Encode(id)).decrypt(raw.subarray(12));
+  let plain: Uint8Array = gcm(fromBase64(key), raw.subarray(0, 12), utf8Encode(id)).decrypt(raw.subarray(12));
+  if (plain[0] === 0x78) plain = unzlibSync(plain);
   return JSON.parse(utf8Decode(plain)) as T;
 }

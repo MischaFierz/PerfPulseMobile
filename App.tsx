@@ -11,7 +11,7 @@ import { checkForUpdate, installedVersion, type AppUpdate } from './src/update';
 
 /**
  * PerfPulse fürs Handy: zeigt die Werte deiner PCs live – von überall. Einmal den QR-Code aus PerfPulse scannen
- * (Seite „Handy“ → „Von überall“), dann bleibt der PC gespeichert. Mehrere PCs gehen auch.
+ * (Seite „Handy“ → Handy-Verbindung einschalten), dann bleibt der PC gespeichert. Mehrere PCs gehen auch.
  */
 export default function App() {
   const [pcs, setPcs] = useState<Pc[] | null>(null);

@@ -1,12 +1,12 @@
 # PerfPulse – Handy-App
 
 Zeigt die Live-Werte deiner PCs mit [PerfPulse](https://github.com/MischaFierz/PerfPulseApp) –
-von überall, nicht nur im Heimnetz: CPU, RAM, GPU, Datenträger, Netzwerk, Temperaturen, die
+von überall: CPU, RAM, GPU, Datenträger, Netzwerk, Temperaturen, die
 aktivsten Prozesse und Abstürze. Mehrere PCs gehen auch.
 
 ## So geht's
 
-1. In PerfPulse am PC: Seite **Handy** → **Von überall** einschalten.
+1. In PerfPulse am PC: Seite **Handy** → die Handy-Verbindung einschalten.
 2. In der App den QR-Code scannen (oder den kopierten Link einfügen).
 3. Fertig – der PC bleibt gespeichert. Die App öffnen genügt, solange PerfPulse am PC läuft.
 

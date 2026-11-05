@@ -1,4 +1,4 @@
-/** Ein PC auf diesem Handy – aus dem QR-Code in PerfPulse (Seite „Handy“ → „Überall“). */
+/** Ein PC auf diesem Handy – aus dem QR-Code in PerfPulse (Seite „Handy“). */
 export interface Pc {
   /** Die PerfPulse-Website, etwa https://perfpulse.ch */
   server: string;
@@ -15,7 +15,7 @@ export interface Pc {
 export interface Temp { label: string; c: number; est: boolean; level: string; throttling: boolean }
 export interface Proc { name: string; cpu: number; ram: number; gpu: number }
 
-/** Was PerfPulse schickt (wie /api/stats der Verbindung im Heimnetz). */
+/** Was PerfPulse schickt. */
 export interface Stats {
   pc: string;
   ready: boolean;
